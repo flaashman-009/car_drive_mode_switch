@@ -93,9 +93,11 @@ class DiffDriverNode(Node):
         self.timer = self.create_timer(0.04, self._tick)
         self.get_logger().info(
             "diff driver ready: backend=%s feedback=%s "
-            "left_motor=%d right_motor=%d cmd_per_mps=%.1f"
+            "left_motor=%d right_motor=%d "
+            "left_cmd_per_mps=%.1f right_cmd_per_mps=%.1f"
             % (self.backend_name, self.use_feedback, self.left_motor,
-               self.right_motor, self.cmd_per_mps))
+               self.right_motor, self.left_cmd_per_mps,
+               self.right_cmd_per_mps))
 
     def _declare_parameters(self):
         self.declare_parameter("cmd_topic", "/cmd_vel")
@@ -108,6 +110,8 @@ class DiffDriverNode(Node):
         self.declare_parameter("max_speed_mps", 0.5)
         self.declare_parameter("max_omega_radps", 2.0)
         self.declare_parameter("cmd_per_mps", 100.0)
+        self.declare_parameter("left_cmd_per_mps", 0.0)
+        self.declare_parameter("right_cmd_per_mps", 0.0)
         self.declare_parameter("left_motor", 2)
         self.declare_parameter("right_motor", 4)
         self.declare_parameter("left_encoder", 2)
@@ -136,6 +140,16 @@ class DiffDriverNode(Node):
         self.max_speed = float(self.get_parameter("max_speed_mps").value)
         self.max_omega = float(self.get_parameter("max_omega_radps").value)
         self.cmd_per_mps = float(self.get_parameter("cmd_per_mps").value)
+        left_cmd_per_mps = float(
+            self.get_parameter("left_cmd_per_mps").value)
+        right_cmd_per_mps = float(
+            self.get_parameter("right_cmd_per_mps").value)
+        self.left_cmd_per_mps = (
+            left_cmd_per_mps if left_cmd_per_mps > 0.0
+            else self.cmd_per_mps)
+        self.right_cmd_per_mps = (
+            right_cmd_per_mps if right_cmd_per_mps > 0.0
+            else self.cmd_per_mps)
         self.left_motor = int(self.get_parameter("left_motor").value)
         self.right_motor = int(self.get_parameter("right_motor").value)
         self.left_encoder = int(self.get_parameter("left_encoder").value)
@@ -235,10 +249,10 @@ class DiffDriverNode(Node):
         self._publish_state(encoder_values if self.use_feedback else [0, 0, 0, 0])
 
     def _run_feedback_tick(self, dt):
-        left_ff = self.target_left_mps * self.cmd_per_mps
-        right_ff = self.target_right_mps * self.cmd_per_mps
-        left_err = left_ff - self.actual_left_mps * self.cmd_per_mps
-        right_err = right_ff - self.actual_right_mps * self.cmd_per_mps
+        left_ff = self.target_left_mps * self.left_cmd_per_mps
+        right_ff = self.target_right_mps * self.right_cmd_per_mps
+        left_err = left_ff - self.actual_left_mps * self.left_cmd_per_mps
+        right_err = right_ff - self.actual_right_mps * self.right_cmd_per_mps
         left_raw = left_ff + self.left_pid.update(left_err, dt)
         right_raw = right_ff + self.right_pid.update(right_err, dt)
         self._send_wheel_commands(left_raw, right_raw)
@@ -251,9 +265,9 @@ class DiffDriverNode(Node):
                    self.target_right_mps, self.actual_right_mps, right_raw))
 
     def _send_wheel_targets(self):
-        left_raw = clamp(self.target_left_mps * self.cmd_per_mps,
+        left_raw = clamp(self.target_left_mps * self.left_cmd_per_mps,
                          -100.0, 100.0)
-        right_raw = clamp(self.target_right_mps * self.cmd_per_mps,
+        right_raw = clamp(self.target_right_mps * self.right_cmd_per_mps,
                           -100.0, 100.0)
         self._send_wheel_commands(left_raw, right_raw)
 
