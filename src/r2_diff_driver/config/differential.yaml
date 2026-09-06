@@ -1,0 +1,48 @@
+# ============================================================
+# 可变参数清单（改完必须重新 colcon build 才在 install 里生效）
+# 分三类：
+#  [A] 车辆结构 / 标定类 —— 上真车前几乎都需用 bench_test 实测填准
+#      track_width, cmd_per_mps, left/right_motor, left/right_encoder,
+#      left/right_encoder_sign, encoder_ticks_per_meter, car_type
+#  [B] 运动限幅 / 安全类 —— 数值可先保守，真车再放宽
+#      max_speed_mps, max_omega_radps, watchdog_timeout, estop
+#  [C] 闭环(PID)类 —— 只在 use_encoder_feedback=true 时用到
+#      pid_kp/ki/kd, pid_integral_limit, pid_output_limit, use_encoder_feedback
+#  [D] 话题/后端类 —— 接口路径，一般不用动
+#      cmd_topic, estop_topic, wheel_state_topic, backend, serial_port
+# ============================================================
+r2_diff_driver:
+  ros__parameters:
+    cmd_topic: /cmd_vel                    # [D] 订阅的速度指令话题
+    estop_topic: /estop                    # [D] 急停话题(true=强制停车)
+    wheel_state_topic: /r2_diff/wheel_state   # [D] 轮速状态发布话题
+    backend: mock            # mock | rosmaster; choose rosmaster on the vehicle
+    serial_port: /dev/myserial            # [D] 底盘串口设备
+    car_type: 5                           # [A] R2 车型号(Rosmaster_Lib 用)
+    track_width: 0.1646                   # [A] ★轮距(米)，差速运动学关键，需实测
+    max_speed_mps: 0.5                    # [B] 最大线速度限幅
+    max_omega_radps: 2.0                  # [B] 最大角速度限幅
+    cmd_per_mps: 100.0                    # [A] ★速度(m/s)→电机指令换算系数，需标定
+    left_motor: 2                         # [A] ★左侧电机通道，需标定
+    right_motor: 4                        # [A] ★右侧电机通道，需标定
+    left_encoder: 2                       # [A] ★左编码器通道，需标定
+    right_encoder: 4                      # [A] ★右编码器通道，需标定
+    left_encoder_sign: 1.0                # [A] ★左编码器方向符号(正负，需标定)
+    right_encoder_sign: 1.0               # [A] ★右编码器方向符号(正负，需标定)
+    encoder_ticks_per_meter: 0.0          # [A] ★每米多少 tick，没标定保持 0
+    use_encoder_feedback: false           # [C] 是否编码器闭环；true 需先标定
+    pid_kp: 0.5                           # [C] PID 比例增益(闭环用)
+    pid_ki: 1.5                           # [C] PID 积分增益(闭环用)
+    pid_kd: 0.0                           # [C] PID 微分增益(闭环用)
+    pid_integral_limit: 30.0              # [C] PID 积分累计上限
+    pid_output_limit: 100.0               # [C] PID 输出限制(±100)
+    watchdog_timeout: 0.3                 # [B] 超过该时间没新指令就停车(秒)
+    center_steer_on_start: true           # [B] 启动时前轮舵机回中
+
+r2_mode_manager:
+  ros__parameters:
+    initial_mode: differential            # 启动时默认模式
+    service_name: /set_drive_mode         # 模式切换服务名
+    state_topic: /drive_mode_state        # 模式状态话题
+    estop_topic: /estop                   # 急停话题(与 driver 共用)
+    accepted_modes: ["ackermann", "differential"]   # 允许切换的模式集合

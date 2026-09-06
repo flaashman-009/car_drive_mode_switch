@@ -1,0 +1,9 @@
+builtin_interfaces/Time stamp
+float32 left_target_mps
+float32 right_target_mps
+float32 left_actual_mps
+float32 right_actual_mps
+float32 left_raw_cmd
+float32 right_raw_cmd
+int64 left_encoder_ticks
+int64 right_encoder_ticks
