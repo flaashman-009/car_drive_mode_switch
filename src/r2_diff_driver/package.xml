@@ -4,7 +4,7 @@
   <name>r2_diff_driver</name>
   <version>0.1.0</version>
   <description>ROS2 driver framework for software differential mode on the R2 Ackermann chassis.</description>
-  <maintainer email="r2@localhost">r2 team</maintainer>
+  <maintainer email="r2@example.com">r2 team</maintainer>
   <license>Apache-2.0</license>
 
   <depend>builtin_interfaces</depend>

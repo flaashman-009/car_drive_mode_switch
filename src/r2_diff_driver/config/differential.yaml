@@ -32,12 +32,13 @@ r2_diff_driver:
     left_encoder_sign: 1.0                # [A] 实测: +PWM=向前=编码器+
     right_encoder_sign: 1.0               # [A] 实测: +PWM=向前=编码器+
     encoder_ticks_per_meter: 3900.0       # [A] 实测推1m: 左3912/右3891, 取3900
-    use_encoder_feedback: false           # [C] 是否编码器闭环；true 需先标定
+    use_encoder_feedback: true            # [C] 台架已验证编码器闭环，默认开启
     pid_kp: 0.5                           # [C] PID 比例增益(闭环用)
     pid_ki: 1.5                           # [C] PID 积分增益(闭环用)
     pid_kd: 0.0                           # [C] PID 微分增益(闭环用)
     pid_integral_limit: 30.0              # [C] PID 积分累计上限
     pid_output_limit: 100.0               # [C] PID 输出限制(±100)
+    speed_filter_alpha: 0.3               # [C] 轮速低通滤波系数，越小越平滑
     watchdog_timeout: 0.3                 # [B] 超过该时间没新指令就停车(秒)
     center_steer_on_start: true           # [B] 启动时前轮舵机回中
 

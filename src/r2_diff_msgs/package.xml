@@ -4,7 +4,7 @@
   <name>r2_diff_msgs</name>
   <version>0.1.0</version>
   <description>Custom messages and services for R2 software differential drive mode.</description>
-  <maintainer email="r2@localhost">r2 team</maintainer>
+  <maintainer email="r2@example.com">r2 team</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

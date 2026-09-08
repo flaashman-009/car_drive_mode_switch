@@ -125,6 +125,7 @@ class DiffDriverNode(Node):
         self.declare_parameter("pid_kd", 0.0)
         self.declare_parameter("pid_integral_limit", 30.0)
         self.declare_parameter("pid_output_limit", 100.0)
+        self.declare_parameter("speed_filter_alpha", 0.3)
         self.declare_parameter("watchdog_timeout", 0.3)
         self.declare_parameter("center_steer_on_start", True)
 
@@ -169,6 +170,10 @@ class DiffDriverNode(Node):
             self.get_parameter("pid_integral_limit").value)
         self.pid_output_limit = float(
             self.get_parameter("pid_output_limit").value)
+        self.speed_filter_alpha = float(
+            self.get_parameter("speed_filter_alpha").value)
+        self.speed_filter_alpha = max(
+            0.01, min(1.0, self.speed_filter_alpha))
         self.watchdog_timeout = float(
             self.get_parameter("watchdog_timeout").value)
         self.center_steer = bool(
@@ -239,8 +244,13 @@ class DiffDriverNode(Node):
             if self.observer is not None:
                 speeds = self.observer.update(encoder_values, dt)
             if speeds is not None:
-                self.actual_left_mps, self.actual_right_mps = speeds
-                self._run_feedback_tick(dt)
+                self.actual_left_mps = (
+                    self.speed_filter_alpha * speeds[0]
+                    + (1.0 - self.speed_filter_alpha) * self.actual_left_mps)
+                self.actual_right_mps = (
+                    self.speed_filter_alpha * speeds[1]
+                    + (1.0 - self.speed_filter_alpha) * self.actual_right_mps)
+                self._run_feedback_tick(dt, speeds[0], speeds[1])
             else:
                 self._send_wheel_targets()
         else:
@@ -248,11 +258,11 @@ class DiffDriverNode(Node):
 
         self._publish_state(encoder_values if self.use_feedback else [0, 0, 0, 0])
 
-    def _run_feedback_tick(self, dt):
+    def _run_feedback_tick(self, dt, raw_left_mps, raw_right_mps):
         left_ff = self.target_left_mps * self.left_cmd_per_mps
         right_ff = self.target_right_mps * self.right_cmd_per_mps
-        left_err = left_ff - self.actual_left_mps * self.left_cmd_per_mps
-        right_err = right_ff - self.actual_right_mps * self.right_cmd_per_mps
+        left_err = left_ff - raw_left_mps * self.left_cmd_per_mps
+        right_err = right_ff - raw_right_mps * self.right_cmd_per_mps
         left_raw = left_ff + self.left_pid.update(left_err, dt)
         right_raw = right_ff + self.right_pid.update(right_err, dt)
         self._send_wheel_commands(left_raw, right_raw)
