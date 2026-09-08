@@ -1,17 +1,19 @@
 # R2 Software Differential Drive Framework
 
-Prototype workspace for switching a Yahboom ROSMaster R2 Ackermann chassis into
-a software differential-drive mode.
+ROS2 framework for switching a Yahboom ROSMaster R2 Ackermann chassis into a
+software differential-drive mode.
 
 ## Status
 
 - Custom ROS2 interfaces: ready.
 - ROS2 node/launch/config framework: ready.
-- Motor channels, encoder channels, `ticks_per_meter` and PID gains: not yet
-  calibrated on the vehicle (chassis USB was offline when this framework was
-  created).
-- Runtime process handoff between Ackermann and differential modes: interface
-  is defined; process supervision is not implemented yet.
+- Motor/encoder channels and direction signs: measured on the vehicle.
+- `cmd_per_mps` and `ticks_per_meter`: calibrated on the vehicle.
+- Differential encoder closed loop: verified on the bench.
+- Ackermann/differential process switching: verified on the vehicle with
+  `scripts/switch_drive_mode.sh`.
+- Ground differential turning: still open. The chassis is mechanically
+  Ackermann; software differential mode is not a true differential chassis.
 
 ## Layout
 
@@ -19,22 +21,23 @@ a software differential-drive mode.
 .
 ├── docs/                        # hardware notes and mode design notes
 ├── legacy/                      # earlier standalone prototypes
+├── scripts/
+│   └── switch_drive_mode.sh     # one-key Ackermann/differential switch
 └── src/
-    ├── r2_diff_msgs/             # custom msg/srv package (ament_cmake)
+    ├── r2_diff_msgs/            # custom msg/srv package (ament_cmake)
     │   ├── CMakeLists.txt
     │   ├── msg/
     │   └── srv/
-    └── r2_diff_driver/           # driver/mode-manager package (ament_python)
-        ├── config/               # ROS2 parameter YAML
-        ├── launch/               # ROS2 launch files
-        ├── r2_diff_driver/       # Python modules
+    └── r2_diff_driver/          # driver/mode-manager package (ament_python)
+        ├── config/
+        ├── launch/
+        ├── r2_diff_driver/
         └── test/
 ```
 
 ## Build
 
-Run this from the workspace root (the folder containing `src/`) on a machine
-with ROS2 Humble and `colcon`:
+Run from the workspace root on a machine with ROS2 Humble and `colcon`:
 
 ```bash
 colcon build --packages-select r2_diff_msgs r2_diff_driver
@@ -47,38 +50,40 @@ source install/setup.bash
 ros2 launch r2_diff_driver differential_drive.launch.py backend:=mock
 ```
 
-`backend:=mock` lets the node tree run without opening `/dev/myserial`. Publish
-a Twist on `/cmd_vel` to see the target wheel speeds in the logs.
-
-## Quick start on the vehicle (after calibration)
+## Quick start on the vehicle
 
 ```bash
-ros2 launch r2_diff_driver differential_drive.launch.py backend:=rosmaster
+~/switch_drive_mode.sh differential
+~/switch_drive_mode.sh ackermann
 ```
 
-Before that, edit `src/r2_diff_driver/config/differential.yaml` and run the
-bench calibration. ROS2 launch and parameter paths are resolved from
-`install/` after `colcon build`.
+Manual differential launch:
+
+```bash
+cd ~/r2_ws
+source install/setup.bash
+ros2 launch r2_diff_driver differential_drive.launch.py backend:=rosmaster
+```
 
 ## Services and topics
 
 - Service `/set_drive_mode`:
-  `r2_diff_msgs/srv/SetDriveMode`, mode is `ackermann` or `differential`.
+  `r2_diff_msgs/srv/SetDriveMode`.
 - Topic `/drive_mode_state`: `r2_diff_msgs/msg/ModeState`.
 - Topic `/r2_diff/wheel_state`: `r2_diff_msgs/msg/WheelState`.
 
-Example service call:
+## Vehicle progress
 
-```bash
-ros2 service call /set_drive_mode r2_diff_msgs/srv/SetDriveMode "{mode: differential}"
-```
+Measured on the Yahboom R2:
 
-## Replace when the chassis is available again
+- `left_motor=2`, `right_motor=4`
+- `left_encoder=2`, `right_encoder=4`
+- Positive PWM drives both rear wheels forward.
+- Push calibration: left about 3912 ticks/m, right about 3891 ticks/m.
+- PWM ramp calibration: `left_cmd_per_mps=45.5`,
+  `right_cmd_per_mps=54.5`.
+- Differential encoder closed loop tracks target wheel speed on the bench.
+- Encoder speed is averaged over three control periods to avoid 0/2x
+  sampling spikes caused by the 40 ms chassis report rate.
 
-- Motor/encoder channel mapping from the bench test.
-- `encoder_ticks_per_meter` and `cmd_per_mps` from calibration.
-- PID gains from lifted-wheel step response.
-- Mode-manager process handoff in
-  `src/r2_diff_driver/r2_diff_driver/mode_manager_node.py`.
-- Confirm `RosmasterMotorBackend` constructor arguments against the
-  `Rosmaster_Lib.py` installed on the vehicle.
+Both modes share `/dev/myserial`, so they must never run at the same time.
