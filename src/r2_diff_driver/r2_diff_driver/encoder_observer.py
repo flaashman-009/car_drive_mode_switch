@@ -29,7 +29,8 @@ def _signed_delta(current, previous, wrap_range):
 
 class EncoderObserver:
     def __init__(self, left_index, right_index, ticks_per_meter,
-                 left_sign=1.0, right_sign=1.0, wrap_range=None):
+                 left_sign=1.0, right_sign=1.0, wrap_range=None,
+                 window_size=3):
         if ticks_per_meter <= 0:
             raise ValueError("ticks_per_meter must be positive")
         self.left_index = left_index - 1
@@ -39,9 +40,14 @@ class EncoderObserver:
         self.right_sign = right_sign
         self.wrap_range = wrap_range
         self.previous = None
+        self.window_size = max(1, int(window_size))
+        self.left_window = []
+        self.right_window = []
 
     def reset(self):
         self.previous = None
+        self.left_window = []
+        self.right_window = []
 
     def update(self, encoder_values, dt):
         """Return (left_mps, right_mps), or None on the first sample."""
@@ -66,4 +72,14 @@ class EncoderObserver:
 
         left_mps = left_ticks / dt / self.ticks_per_meter * self.left_sign
         right_mps = right_ticks / dt / self.ticks_per_meter * self.right_sign
-        return left_mps, right_mps
+
+        self.left_window.append(left_mps)
+        self.right_window.append(right_mps)
+        if len(self.left_window) > self.window_size:
+            self.left_window.pop(0)
+        if len(self.right_window) > self.window_size:
+            self.right_window.pop(0)
+
+        avg_left = sum(self.left_window) / len(self.left_window)
+        avg_right = sum(self.right_window) / len(self.right_window)
+        return avg_left, avg_right

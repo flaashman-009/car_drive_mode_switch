@@ -32,6 +32,7 @@ r2_diff_driver:
     left_encoder_sign: 1.0                # [A] 实测: +PWM=向前=编码器+
     right_encoder_sign: 1.0               # [A] 实测: +PWM=向前=编码器+
     encoder_ticks_per_meter: 3900.0       # [A] 实测推1m: 左3912/右3891, 取3900
+    encoder_window_size: 3                # [C] 多周期平均，降低编码器0/2倍尖峰
     use_encoder_feedback: true            # [C] 台架已验证编码器闭环，默认开启
     pid_kp: 0.5                           # [C] PID 比例增益(闭环用)
     pid_ki: 1.5                           # [C] PID 积分增益(闭环用)

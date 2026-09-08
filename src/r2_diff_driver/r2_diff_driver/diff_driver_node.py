@@ -42,10 +42,11 @@ class DiffDriverNode(Node):
                 self.observer = EncoderObserver(
                     self.left_encoder,
                     self.right_encoder,
-                    self.encoder_ticks_per_meter,
-                    left_sign=self.left_encoder_sign,
-                    right_sign=self.right_encoder_sign,
-                )
+                self.encoder_ticks_per_meter,
+                left_sign=self.left_encoder_sign,
+                right_sign=self.right_encoder_sign,
+                window_size=self.encoder_window_size,
+            )
             except ValueError as exc:
                 self.get_logger().error("encoder observer disabled: %s" % exc)
                 self.use_feedback = False
@@ -119,6 +120,7 @@ class DiffDriverNode(Node):
         self.declare_parameter("left_encoder_sign", 1.0)
         self.declare_parameter("right_encoder_sign", 1.0)
         self.declare_parameter("encoder_ticks_per_meter", 0.0)
+        self.declare_parameter("encoder_window_size", 3)
         self.declare_parameter("use_encoder_feedback", False)
         self.declare_parameter("pid_kp", 0.5)
         self.declare_parameter("pid_ki", 1.5)
@@ -161,6 +163,8 @@ class DiffDriverNode(Node):
             self.get_parameter("right_encoder_sign").value)
         self.encoder_ticks_per_meter = float(
             self.get_parameter("encoder_ticks_per_meter").value)
+        self.encoder_window_size = int(
+            self.get_parameter("encoder_window_size").value)
         self.use_feedback = bool(
             self.get_parameter("use_encoder_feedback").value)
         self.pid_kp = float(self.get_parameter("pid_kp").value)
