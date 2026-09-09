@@ -75,7 +75,7 @@ class RosmasterMotorBackend(MotorBackend):
     def connect(self):
         # Imported here so a desktop without the vendor library can still
         # import and test this package.
-        from Rosmaster_Lib import Rosmaster
+        from Rosmaster_Lib import Rosmaster  # type: ignore
 
         self.car = Rosmaster(com=self.serial_port, car_type=self.car_type)
         self.car.set_car_type(self.car_type)
