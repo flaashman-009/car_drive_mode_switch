@@ -21,7 +21,7 @@ r2_diff_driver:
     car_type: 5                           # [A] R2 车型号(Rosmaster_Lib 用)
     track_width: 0.1646                   # [A] ★轮距(米)，差速运动学关键，需实测
     max_speed_mps: 0.5                    # [B] 最大线速度限幅
-    max_omega_radps: 2.0                  # [B] 最大角速度限幅
+    max_omega_radps: 4.0                  # [B] 最大角速度限幅
     cmd_per_mps: 50.0                     # [A] 备用统一系数，左右独立参数优先
     left_cmd_per_mps: 45.5                # [A] 实测: 左后轮 PWM斜坡拟合
     right_cmd_per_mps: 54.5               # [A] 实测: 右后轮 PWM斜坡拟合
