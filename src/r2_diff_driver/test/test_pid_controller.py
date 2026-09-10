@@ -25,3 +25,9 @@ def test_reset_clears_state():
     pid.reset()
     assert pid.integral == 0.0
     assert pid.previous_error == 0.0
+
+
+def test_integral_does_not_wind_up_when_saturated():
+    pid = Pid1D(kp=10.0, ki=10.0, output_limit=1.0)
+    pid.update(10.0, 0.1)
+    assert pid.integral == 0.0

@@ -22,12 +22,6 @@ class Pid1D:
 
         proportional = self.kp * error
 
-        if self.ki != 0.0:
-            self.integral += self.ki * error * dt
-            self.integral = max(-self.integral_limit,
-                                min(self.integral_limit, self.integral))
-        integral = self.integral
-
         derivative = 0.0
         if self.kd != 0.0:
             if self.has_previous_error:
@@ -35,5 +29,15 @@ class Pid1D:
             self.previous_error = error
             self.has_previous_error = True
 
-        output = proportional + integral + derivative
+        if self.ki != 0.0:
+            candidate = self.integral + self.ki * error * dt
+            candidate = max(-self.integral_limit,
+                            min(self.integral_limit, candidate))
+            projected = proportional + candidate + derivative
+            saturated_high = projected > self.output_limit and error > 0.0
+            saturated_low = projected < -self.output_limit and error < 0.0
+            if not (saturated_high or saturated_low):
+                self.integral = candidate
+
+        output = proportional + self.integral + derivative
         return max(-self.output_limit, min(self.output_limit, output))

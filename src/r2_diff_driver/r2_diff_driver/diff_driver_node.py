@@ -42,11 +42,11 @@ class DiffDriverNode(Node):
                 self.observer = EncoderObserver(
                     self.left_encoder,
                     self.right_encoder,
-                self.encoder_ticks_per_meter,
-                left_sign=self.left_encoder_sign,
-                right_sign=self.right_encoder_sign,
-                window_size=self.encoder_window_size,
-            )
+                    self.encoder_ticks_per_meter,
+                    left_sign=self.left_encoder_sign,
+                    right_sign=self.right_encoder_sign,
+                    window_size=self.encoder_window_size,
+                )
             except ValueError as exc:
                 self.get_logger().error("encoder observer disabled: %s" % exc)
                 self.use_feedback = False
@@ -217,6 +217,8 @@ class DiffDriverNode(Node):
         if force_stop:
             self.target_left_mps = 0.0
             self.target_right_mps = 0.0
+            self.actual_left_mps = 0.0
+            self.actual_right_mps = 0.0
             self.left_pid.reset()
             self.right_pid.reset()
             if self.observer is not None:
@@ -256,7 +258,9 @@ class DiffDriverNode(Node):
                     + (1.0 - self.speed_filter_alpha) * self.actual_right_mps)
                 self._run_feedback_tick(dt, speeds[0], speeds[1])
             else:
-                self._send_wheel_targets()
+                # Wait for one fresh encoder sample after reset instead of
+                # applying full feedforward before feedback is available.
+                self._send_wheel_commands(0.0, 0.0)
         else:
             self._send_wheel_targets()
 
