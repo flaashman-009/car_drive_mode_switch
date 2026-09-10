@@ -72,6 +72,36 @@ ros2 launch r2_diff_driver differential_drive.launch.py backend:=rosmaster
 - Topic `/drive_mode_state`: `r2_diff_msgs/msg/ModeState`.
 - Topic `/r2_diff/wheel_state`: `r2_diff_msgs/msg/WheelState`.
 
+## PCD to PGM map filtering
+
+`scripts/pcd_to_pgm.py` converts a PCD point cloud into a ROS-style
+occupancy-grid PGM/YAML pair.
+
+```bash
+python3 scripts/pcd_to_pgm.py input.pcd ~/maps/room \
+  --time-field timestamp \
+  --max-age-ms 200 \
+  --z-min -0.1 --z-max 1.5 \
+  --resolution 0.05 \
+  --voxel-size 0.03 \
+  --outlier-radius 0.08 \
+  --min-neighbors 3 \
+  --min-points 1 \
+  --inflate-cells 2
+```
+
+Filter order:
+
+```text
+timestamp freshness -> Z pass-through -> voxel downsample
+-> radius outlier removal -> 2D projection -> obstacle inflation
+-> PGM/YAML
+```
+
+If the PCD contains `t`, `time`, or `timestamp`, use `--time-field` to drop
+stale points relative to the newest timestamp. The script also prints load and
+total processing latency in milliseconds.
+
 ## Vehicle progress
 
 Measured on the Yahboom R2:
